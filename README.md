@@ -4,7 +4,11 @@ This assessment was bespoke handcrafted for marcelo.
 
 Read more about this assessment [here](https://react.eogresources.com)
 
-query {getWeatherForLocation(latLong:{latitude:1,longitude:2}){locationName}}
+## Console Query Examples
+
+`query {getWeatherForLocation(latLong:{latitude:1,longitude:2}){locationName}}
+`
+
 {
   "data": {
     "getWeatherForLocation": {
@@ -12,9 +16,20 @@ query {getWeatherForLocation(latLong:{latitude:1,longitude:2}){locationName}}
     }
   }
 }
+
+
+`
 query {heartBeat}
-query {getMeasurements(input:{metricName:"flareTemp"}){metric}}
-query  Metrics { getMetrics }
+`
+
+`
+query {getMeasurements(input:
+{metricName:"flareTemp"}){metric}}
+`
+
+`query  Metrics { getMetrics }
+`
+
 {
   "data": {
     "getMetrics": [
@@ -27,7 +42,8 @@ query  Metrics { getMetrics }
     ]
   }
 }
-query { 
+
+`query { 
   getLastKnownMeasurement(metricName: "flareTemp") {
 		    metric
 		    value
@@ -35,6 +51,8 @@ query {
 		    at
 		  }
     }
+`
+
     {
       "data": {
         "getLastKnownMeasurement": {
@@ -45,7 +63,8 @@ query {
         }
       }
     }
-query {
+
+`query {
   getMultipleMeasurements(input:{metricName:"flareTemp"}) {
     metric
     measurements {
@@ -55,7 +74,8 @@ query {
       unit
     }
   }
-}
+}`
+
 {
   "metric": "flareTemp",
   "at": 1597448106894,
@@ -67,23 +87,4 @@ query {
   "at": 1597448108195,
   "value": 689.46,
   "unit": "F"
-},
-
-const query_metric = `
-    query {
-        getMetrics
-    }`;
-
-const query = `
-query($input: [MeasurementQuery]) {
-  getMultipleMeasurements(input: $input) {
-    metric
-    measurements {
-      metric
-      at
-      value
-      unit
-    }
-  }
-}
-`;
+},...
