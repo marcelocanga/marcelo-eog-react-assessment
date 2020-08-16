@@ -10,8 +10,9 @@ import {
   ResponsiveContainer,
   Legend, Label
 } from "recharts";
-//import moment from "moment";
+import moment from "moment";
 import * as actions from '../store/actions';
+
 
 const client = createClient({
   url: "https://react.eogresources.com/graphql"
@@ -52,26 +53,43 @@ export default () => {
 };
 
 const Chart = () => {
+//-------------------------------------- select/dispatch
   const { metricNames } = useSelector(getMetricNames);
-  const { heartBeat } = useSelector(getHeartBeat);
+  const { heartBeat }   = useSelector(getHeartBeat);
   const dispatch = useDispatch();
+
+//-------------------------------------- hook state
+
   const [newData, setNewData] = React.useState([]);
-  const [merged, setMerged] = React.useState([]);
+  const [merged, setMerged]   = React.useState([]);
   const updatedMetricNames = metricNames
     ? metricNames.map(item => {
         item.after = heartBeat - 1800000;
         return item;
       })
     : null;
+
+  
+//--------------------------------------  query
+
+  //   const [result, executeQuery] = useQuery({
+  //   query,
+  //   skip: !updatedMetricNames,
+  //   variables: {
+  //     input: updatedMetricNames ? updatedMetricNames : metricNames
+  //   }
+  // });
+
   const [result, executeQuery] = useQuery({
     query,
-    skip: !updatedMetricNames,
     variables: {
-      input: updatedMetricNames ? updatedMetricNames : metricNames
+      input: metricNames
     }
   });
 
   const { data, error } = result;
+
+  //-------------------------------------- hook  effect
   useEffect(() => {
     setNewData([]);
     if (error) {
@@ -79,7 +97,7 @@ const Chart = () => {
       return;
     }
     if (!data) return;
-    // TODO put initial chart data
+   
     data.getMultipleMeasurements.map(item => {
       return newData.push(item.measurements);
     });
@@ -88,11 +106,23 @@ const Chart = () => {
       item[item.metric] = item.value;
     });
     setMerged(merged);
-  }, [dispatch, data, error, executeQuery]);
+  //   const interval = setInterval(() => {
+  //     executeQuery({ requestPolicy: "network-only" });
+  //     setMerged(merged);
+  // }, 3000);
+
+  }, 
+  [dispatch, data, error, executeQuery]
+  );
+
+  //-------------------------------------- time formatter
+
   let xAxisTickFormatter = date => {
-    //return moment.unix(date).format("hh:mm");
-    return date;
+    return moment(parseInt(date)).format("LT");
   };
+
+  //--------------------------------------  render
+
   return (
     <Fragment>
       <ResponsiveContainer width="100%" maxHeight={500}>

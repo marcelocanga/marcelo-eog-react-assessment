@@ -27,7 +27,8 @@ const useStyles = makeStyles(theme => ({
   formControl: {
     margin: theme.spacing(1),
     minWidth: 300,
-    maxWidth: 400
+    maxWidth: 400,
+    minHeight:230
   },
   chips: {
     display: "flex",
@@ -128,7 +129,7 @@ const Selector = (props) =>{
   });
   
   const [metricNames, setMetricName] = useState([]);
-  const [metrics, setMetricNames] = useState([]);
+  const [metrics, setMetricNames]    = useState([]);
 
   // query
   let query = query_metric;
@@ -151,7 +152,6 @@ const Selector = (props) =>{
       return;
     }
     if (!data) return;
-    console.log(data);
     setMetricNames(data.getMetrics);
   }, [dispatch, data, error]);
 
