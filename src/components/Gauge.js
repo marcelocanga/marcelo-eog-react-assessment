@@ -43,6 +43,7 @@ const LastKnownMeasurement = props => {
   });
 
   const { data, error } = result;
+ 
 
   useEffect(() => {
     if (error) {

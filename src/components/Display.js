@@ -56,6 +56,7 @@ const { metricNames } = useSelector(getDataNames);
       return;
     }
     if (!data) return;
+
     setHeartBeat(data.heartBeat);
     dispatch({ type: actions.HEARTBEAT_UPDATED, heartBeat })
 
