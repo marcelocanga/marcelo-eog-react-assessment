@@ -1,3 +1,4 @@
+
 import React, { Fragment, useEffect } from "react";
 import { createClient, Provider, useQuery } from "urql";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,7 +9,8 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  Legend, Label,Tooltip
+  Legend, Label,
+  Tooltip
 } from "recharts";
 import moment from "moment";
 import * as actions from '../store/actions';
@@ -60,10 +62,8 @@ const Chart = () => {
 
 //-------------------------------------- hook state
 
-  //const [newData, setNewData] = React.useState([]);
-  //const [merged, setMerged]   = React.useState([]);
-  const [odata,  setOdata]    = React.useState([]);
-
+  const [newData, setNewData] = React.useState([]);
+  const [merged, setMerged]   = React.useState([]);
   const updatedMetricNames = metricNames
     ? metricNames.map(item => {
         item.after = heartBeat - 1800000;
@@ -82,60 +82,41 @@ const Chart = () => {
     }
   });
 
-  // const [result, executeQuery] = useQuery({
-  //   query,
-  //   variables: {
-  //     input: metricNames
-  //   }
-  // });
 
   const { data, error } = result;
 
   //-------------------------------------- hook  effect
   useEffect(() => {
-    //setNewData([]);
-    setOdata([]);
+    const interval = setInterval(() => {
+      executeQuery({ requestPolicy: "network-only" });
+      console.log('Polling every 3 seconds!',result);
+    }, 2000);
+    return () => clearInterval(interval);
+  },[]); 
+
+  useEffect(() => {
+    console.log("setting new data")
+    setNewData([]);
     if (error) {
       dispatch({ type: actions.API_ERROR, error: error.message });
       return;
     }
     if (!data) return;
    
-    // data.getMultipleMeasurements.map(item => {
-    //   return newData.push(item.measurements);
-    // });
-    // console.log("measure:",data.getMultipleMeasurements);  
-    
-    // let merged = [].concat.apply([], newData);
-    // merged.map(item => {
-    //   item[item.metric] = item.value;
-    //   return item;
-    // });
-    // setMerged(merged);
-
-    let odata = [];
-    let omea = data.getMultipleMeasurements;
-
-    let jlen = omea[0].measurements.length;
-    for(let jj=0; jj<jlen; jj++){
-      let obj = {};
-      obj["at"] = omea[0].measurements[jj].at ;
-      for(let ii=0; ii < omea.length; ii++){
-          obj[omea[ii].measurements[jj].metric] = omea[ii].measurements[jj].value;
-      }
-      odata.push(obj)
-    }
-    setOdata(odata);
-
-
-  //   const interval = setInterval(() => {
-  //     executeQuery({ requestPolicy: "network-only" });
-  //     setMerged(merged);
-  // }, 3000);
-
+    data.getMultipleMeasurements.map(item => {
+      return newData.push(item.measurements);
+    });
+    let merged = [].concat.apply([], newData);
+    merged.map(item => {
+      item[item.metric] = item.value;
+    });
+    setMerged(merged);
+  
   }, 
   [dispatch, data, error, executeQuery]
   );
+
+
 
   //-------------------------------------- time formatter
 
@@ -143,19 +124,20 @@ const Chart = () => {
     return moment(parseInt(date)).format("LT");
   };
 
-  
+  //--------------------------------------  render
 
   return (
     <Fragment>
       <ResponsiveContainer width="100%" maxHeight={500}>
         <LineChart
           height={600}
-          data={odata}
+          data={merged}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="at"
+            type={"date"}
             tickFormatter={xAxisTickFormatter}
           />
           <YAxis yAxisId="F">
@@ -182,7 +164,7 @@ const Chart = () => {
               style={{ textAnchor: "middle" }}
             />
           </YAxis>
-          <Tooltip active={true}  labelFormatter={xAxisTickFormatter} />
+          <Tooltip />
           <Legend />
           {metricNames
             ? metricNames.map((metricName, index) => {
@@ -246,7 +228,7 @@ const Chart = () => {
                     />
                   );
                 }
-              return 0;})
+              })
             : null}
         </LineChart>
       </ResponsiveContainer>

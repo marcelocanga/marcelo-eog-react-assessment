@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  Legend, Label,Tooltip
+  Legend, Label
 } from "recharts";
 import moment from "moment";
 import * as actions from '../store/actions';
@@ -31,6 +31,34 @@ query($input: [MeasurementQuery]) {
 }
 `;
 
+const current_time = new Date().valueOf();
+const query_multiple_measurements = `
+query($input: [MeasurementQuery] = [
+  {metricName: "tubingPressure", after: ${current_time -
+    1800000}, before: ${current_time}},
+  {metricName: "casingPressure", after: ${current_time -
+    1800000}, before: ${current_time}},
+  {metricName: "oilTemp", after: ${current_time -
+    1800000}, before: ${current_time}},
+  {metricName: "flareTemp", after: ${current_time -
+    1800000}, before: ${current_time}},
+  {metricName: "waterTemp", after: ${current_time -
+    1800000}, before: ${current_time}},
+  {metricName: "injValveOpen", after: ${current_time -
+    1800000}, before: ${current_time}}
+]
+){
+  getMultipleMeasurements(input: $input) {
+    metric
+    measurements {
+     at
+     value
+     metric
+     unit
+    }
+  }
+}`;
+
 const getMetricNames = state => {
   const { metricNames } = state.metricNames;
   return {
@@ -52,6 +80,37 @@ export default () => {
   );
 };
 
+const FetchMultipleMeasurements = () => {
+  const dispatch = useDispatch();
+  let [result] = useQuery({
+    query: query_multiple_measurements,
+    variable: []
+  });
+  const { data, error, fetching } = result;
+  console.log("function fetch")
+  useEffect(() => {
+    console.log("fetching",fetching)
+    if (fetching) {
+      return;
+    }
+   
+    // if (error) {
+    //   dispatch({ type: actions.MULTIPLE_MEASUREMENTS_API_CALL_FAIL, error });
+    // }
+    if (!data) {
+      return;
+    }
+  
+    console.log("data:",data);
+    
+    const getMultipleMeasurements = data;
+    // dispatch({
+    //   type: actions.METRICS_MEASUREMENTS_RECEIVED,
+    //   getMultipleMeasurements
+    // });
+  });
+};
+
 const Chart = () => {
 //-------------------------------------- select/dispatch
   const { metricNames } = useSelector(getMetricNames);
@@ -60,10 +119,8 @@ const Chart = () => {
 
 //-------------------------------------- hook state
 
-  //const [newData, setNewData] = React.useState([]);
-  //const [merged, setMerged]   = React.useState([]);
-  const [odata,  setOdata]    = React.useState([]);
-
+  const [newData, setNewData] = React.useState([]);
+  const [merged, setMerged]   = React.useState([]);
   const updatedMetricNames = metricNames
     ? metricNames.map(item => {
         item.after = heartBeat - 1800000;
@@ -71,7 +128,7 @@ const Chart = () => {
       })
     : null;
 
-  
+
 //--------------------------------------  query
 
     const [result, executeQuery] = useQuery({
@@ -79,7 +136,8 @@ const Chart = () => {
     skip: !updatedMetricNames,
     variables: {
       input: updatedMetricNames ? updatedMetricNames : metricNames
-    }
+    },
+    pollInterval: 500
   });
 
   // const [result, executeQuery] = useQuery({
@@ -91,43 +149,30 @@ const Chart = () => {
 
   const { data, error } = result;
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('This will run every second!',result);
+    }, 1000);
+    return () => clearInterval(interval);
+  },[]); 
+
   //-------------------------------------- hook  effect
   useEffect(() => {
-    //setNewData([]);
-    setOdata([]);
+    setNewData([]);
     if (error) {
       dispatch({ type: actions.API_ERROR, error: error.message });
       return;
     }
     if (!data) return;
    
-    // data.getMultipleMeasurements.map(item => {
-    //   return newData.push(item.measurements);
-    // });
-    // console.log("measure:",data.getMultipleMeasurements);  
-    
-    // let merged = [].concat.apply([], newData);
-    // merged.map(item => {
-    //   item[item.metric] = item.value;
-    //   return item;
-    // });
-    // setMerged(merged);
-
-    let odata = [];
-    let omea = data.getMultipleMeasurements;
-
-    let jlen = omea[0].measurements.length;
-    for(let jj=0; jj<jlen; jj++){
-      let obj = {};
-      obj["at"] = omea[0].measurements[jj].at ;
-      for(let ii=0; ii < omea.length; ii++){
-          obj[omea[ii].measurements[jj].metric] = omea[ii].measurements[jj].value;
-      }
-      odata.push(obj)
-    }
-    setOdata(odata);
-
-
+    data.getMultipleMeasurements.map(item => {
+      return newData.push(item.measurements);
+    });
+    let merged = [].concat.apply([], newData);
+    merged.map(item => {
+      item[item.metric] = item.value;
+    });
+    setMerged(merged);
   //   const interval = setInterval(() => {
   //     executeQuery({ requestPolicy: "network-only" });
   //     setMerged(merged);
@@ -137,25 +182,30 @@ const Chart = () => {
   [dispatch, data, error, executeQuery]
   );
 
+
+  
+  
   //-------------------------------------- time formatter
 
   let xAxisTickFormatter = date => {
-    return moment(parseInt(date)).format("LT");
+    return moment(date).format("LT");
   };
 
-  
+  //--------------------------------------  render
 
   return (
     <Fragment>
       <ResponsiveContainer width="100%" maxHeight={500}>
         <LineChart
           height={600}
-          data={odata}
+          data={merged}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="at"
+            allowDataOverflow={true}
+            type='date'
             tickFormatter={xAxisTickFormatter}
           />
           <YAxis yAxisId="F">
@@ -182,7 +232,7 @@ const Chart = () => {
               style={{ textAnchor: "middle" }}
             />
           </YAxis>
-          <Tooltip active={true}  labelFormatter={xAxisTickFormatter} />
+          {/*<Tooltip />*/}
           <Legend />
           {metricNames
             ? metricNames.map((metricName, index) => {
@@ -246,7 +296,7 @@ const Chart = () => {
                     />
                   );
                 }
-              return 0;})
+              })
             : null}
         </LineChart>
       </ResponsiveContainer>
