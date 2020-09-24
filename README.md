@@ -1,8 +1,6 @@
 ## Create React App Visualization
 
-This assessment was bespoke handcrafted for marcelo.
-
-Read more about this assessment [here](https://react.eogresources.com)
+Real time plots using React and GraphQL
 
 ## Console Query Examples
 
